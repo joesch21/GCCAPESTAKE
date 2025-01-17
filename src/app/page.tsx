@@ -99,7 +99,7 @@ export default function Home() {
       >
         <h2>Connect Your Wallet</h2>
         <p>To start staking, please connect your wallet using the embedded connect button below.</p>
-        <div style={{ display: "flex", justifyContent: "center", font: "black", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
           <ConnectEmbed client={client} chain={chain} />
         </div>
       </div>
@@ -135,7 +135,6 @@ export default function Home() {
           padding: "20px",
           background: "rgba(255, 255, 255, 0.9)",
           color: "black",
-          font: "black",
           textAlign: "center",
           borderRadius: "10px",
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
@@ -144,7 +143,16 @@ export default function Home() {
         <h2>How to Stake APE GCC-BNB LP Tokens</h2>
         <ol style={{ paddingLeft: "20px", textAlign: "left" }}>
           <li>
-            <strong>Step 1:</strong> Visit ApeSwap to add liquidity to the GCC-BNB pool.
+            <strong>Step 1:</strong> Visit{" "}
+            <a
+              href="https://apeswap.finance/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#0066cc", textDecoration: "underline" }}
+            >
+              ApeSwap
+            </a>{" "}
+            to add liquidity to the GCC-BNB pool.
           </li>
           <li>
             <strong>Step 2:</strong> Connect your wallet using the button above.
@@ -165,7 +173,6 @@ export default function Home() {
           padding: "20px",
           background: "rgba(0, 0, 0, 0.9)",
           color: "white",
-          font: "black",
           borderRadius: "12px",
           textAlign: "center",
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
