@@ -1,12 +1,19 @@
 "use client";
 
+import { useState } from "react"; // Import useState
 import Link from "next/link";
 import { StakeToken } from "../../components/StakeToken";
-import { ConnectEmbed } from "thirdweb/react"; // Import ConnectEmbed
+import StakeActions from "../../components/StakeActions"; // Import StakeActions
+import TokenBalances from "../../components/TokenBalances"; // Import TokenBalances
+import { ConnectEmbed } from "thirdweb/react";
 import { client } from "./client";
 import { chain } from "./chain";
 
 export default function Home() {
+  // State to manage stake and withdraw amounts
+  const [stakeAmount, setStakeAmount] = useState<number>(0);
+  const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
+
   return (
     <div
       style={{
@@ -45,7 +52,12 @@ export default function Home() {
             href="https://apeswap.finance/"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "#ffd700", textDecoration: "none", fontWeight: "bold", fontSize: "1rem" }}
+            style={{
+              color: "#ffd700",
+              textDecoration: "none",
+              fontWeight: "bold",
+              fontSize: "1rem",
+            }}
           >
             Visit ApeSwap
           </a>
@@ -181,6 +193,13 @@ export default function Home() {
         <h2>Staking Panel</h2>
         <p>Manage your staking operations below:</p>
         <StakeToken />
+        <TokenBalances />
+        <StakeActions
+          stakeAmount={stakeAmount}
+          setStakeAmount={setStakeAmount}
+          withdrawAmount={withdrawAmount}
+          setWithdrawAmount={setWithdrawAmount}
+        />
       </div>
     </div>
   );
