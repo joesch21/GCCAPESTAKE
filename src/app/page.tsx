@@ -1,18 +1,86 @@
 "use client";
 
-import { useState } from "react"; // Import useState
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ethers } from "ethers";
 import { StakeToken } from "../../components/StakeToken";
-import StakeActions from "../../components/StakeActions"; // Import StakeActions
-import TokenBalances from "../../components/TokenBalances"; // Import TokenBalances
+import StakeActions from "../../components/StakeActions";
+import ApeLpBalance from "../../components/ApeLpBalance";
 import { ConnectEmbed } from "thirdweb/react";
 import { client } from "./client";
 import { chain } from "./chain";
+
+// Importing ABIs and contract details
+import stakeTokenABI from "../../utils/stake_token_abi.json"; // LP Token ABI
+import { STAKING_CONTRACT_ABI } from "../../utils/stakingContractABI"; // Staking Contract ABI
+import { STAKING_CONTRACT } from "../../utils/contracts"; // Contract addresses
 
 export default function Home() {
   // State to manage stake and withdraw amounts
   const [stakeAmount, setStakeAmount] = useState<number>(0);
   const [withdrawAmount, setWithdrawAmount] = useState<number>(0);
+
+  // State to store staking balance
+  const [stakingBalance, setStakingBalance] = useState<string>("0");
+
+  // Fetch Staking Balance
+  const fetchStakingBalance = async () => {
+    if (!window.ethereum) {
+      console.error("No Ethereum provider found!");
+      return;
+    }
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const stakingContract = new ethers.Contract(
+        STAKING_CONTRACT.address,
+        STAKING_CONTRACT_ABI,
+        signer
+      );
+
+      const userAddress = await signer.getAddress();
+      const balance = await stakingContract.balanceOf(userAddress); // Replace with your staking balance method
+      setStakingBalance(ethers.formatEther(balance)); // Convert to human-readable format
+    } catch (error) {
+      console.error("Failed to fetch staking balance:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStakingBalance();
+  }, [stakeAmount, withdrawAmount]); // Fetch balance whenever stake or withdraw occurs
+
+  // Approve LP Tokens for Staking
+  const handleApprove = async () => {
+    if (!window.ethereum) {
+      console.error("No Ethereum provider found!");
+      return;
+    }
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const stakeTokenContract = new ethers.Contract(
+        "0xYourLPTokenAddressHere", // Replace with the actual LP token address
+        stakeTokenABI,
+        signer
+      );
+
+      const tx = await stakeTokenContract.approve(
+        STAKING_CONTRACT.address, // Address of the staking contract
+        ethers.parseEther(stakeAmount.toString())
+      );
+
+      console.log("Approval transaction sent:", tx);
+      await tx.wait();
+      console.log("Approval successful!");
+    } catch (error) {
+      console.error("Approval failed:", error);
+    }
+  };
 
   return (
     <div
@@ -116,26 +184,22 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Section: Why Staking */}
+      {/* Staking Balance Section */}
       <div
         style={{
-          margin: "20px 0",
           width: "100%",
-          maxWidth: "800px",
+          maxWidth: "600px",
+          margin: "20px auto",
           padding: "20px",
-          background: "rgba(255, 255, 255, 0.9)",
-          color: "black",
+          background: "rgba(0, 0, 0, 0.8)",
+          color: "white",
+          borderRadius: "12px",
           textAlign: "center",
-          borderRadius: "10px",
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
         }}
       >
-        <h2>What is Staking?</h2>
-        <p>
-          Staking is a way to earn rewards by locking up your tokens to support the network's
-          security and operations. By staking GCC-BNB LP tokens, you contribute liquidity to the
-          GCC-BNB pool and earn rewards over time.
-        </p>
+        <h2>Your Staking Balance</h2>
+        <p>{stakingBalance} GCC-BNB LP Tokens</p>
       </div>
 
       {/* Instructions Section */}
@@ -155,22 +219,13 @@ export default function Home() {
         <h2>How to Stake APE GCC-BNB LP Tokens</h2>
         <ol style={{ paddingLeft: "20px", textAlign: "left" }}>
           <li>
-            <strong>Step 1:</strong> Visit{" "}
-            <a
-              href="https://apeswap.finance/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#0066cc", textDecoration: "underline" }}
-            >
-              ApeSwap
-            </a>{" "}
-            to add liquidity to the GCC-BNB pool.
+            <strong>Step 1:</strong> Approve the staking contract to use your LP tokens.
           </li>
           <li>
-            <strong>Step 2:</strong> Connect your wallet using the button above.
+            <strong>Step 2:</strong> Enter the amount you want to stake and click "Stake."
           </li>
           <li>
-            <strong>Step 3:</strong> Stake your GCC-BNB LP tokens to start earning rewards.
+            <strong>Step 3:</strong> Monitor your staking balance and withdraw if needed.
           </li>
         </ol>
       </div>
@@ -192,8 +247,8 @@ export default function Home() {
       >
         <h2>Staking Panel</h2>
         <p>Manage your staking operations below:</p>
+        <button onClick={handleApprove}>Approve Tokens</button>
         <StakeToken />
-        <TokenBalances />
         <StakeActions
           stakeAmount={stakeAmount}
           setStakeAmount={setStakeAmount}

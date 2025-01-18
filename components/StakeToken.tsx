@@ -1,75 +1,125 @@
-"use client";
+'use client';
 
-import { BrowserProvider, Contract, formatEther } from "ethers"; // For ethers v6
-import { useState, useEffect } from "react";
-import { STAKING_CONTRACT_ABI } from "../utils/stakingContractABI";
-
-const STAKING_CONTRACT_ADDRESS = "0x0B7DB663300949fB7Ec18F63cf44DEB6AAD3F165";
+import React, { useState } from 'react';
+import { ethers } from 'ethers';
+import { STAKING_CONTRACT_ABI } from '../utils/stakingContractABI';
+import stakingTokenABI from '../utils/stake_token_abi.json';
+import { STAKING_CONTRACT, STAKE_TOKEN_CONTRACT } from '../utils/contracts';
 
 export const StakeToken = () => {
-  const [stakingInfo, setStakingInfo] = useState<null | {
-    _tokensStaked: string;
-    _rewards: string;
-  }>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [stakeAmount, setStakeAmount] = useState<number>(0);
+  const [isStaking, setIsStaking] = useState(false);
 
-  useEffect(() => {
-    const fetchStakingInfo = async () => {
-      try {
-        if (!window.ethereum) {
-          console.error("No Ethereum provider found. Install MetaMask.");
-          return;
-        }
+  const handleApprove = async () => {
+    if (!window.ethereum || !stakeAmount) {
+      console.error('No Ethereum provider found, or invalid stake amount.');
+      return;
+    }
 
-        // Initialize provider and signer
-        const provider = new BrowserProvider(window.ethereum); // Use BrowserProvider for ethers v6
-        const signer = await provider.getSigner();
-        const stakingContract = new Contract(
-          STAKING_CONTRACT_ADDRESS,
-          STAKING_CONTRACT_ABI,
-          signer
-        );
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-        // Get connected wallet address
-        const address = await signer.getAddress();
-        setWalletAddress(address);
+      // Create ERC20 contract instance for LP token
+      const stakingTokenContract = new ethers.Contract(
+        STAKE_TOKEN_CONTRACT.address,
+        stakingTokenABI,
+        signer
+      );
 
-        // Fetch staking info using the connected wallet address
-        const info = await stakingContract.getStakeInfo(address);
-        setStakingInfo(info);
-      } catch (error) {
-        console.error("Error fetching staking info:", error);
-      }
-    };
+      console.log('Approving LP tokens...');
+      const tx = await stakingTokenContract.approve(
+        STAKING_CONTRACT.address,
+        ethers.parseEther(stakeAmount.toString()) // Approve the specified stake amount
+      );
+      console.log('Approval in progress...', tx);
 
-    fetchStakingInfo();
-  }, []);
+      await tx.wait();
+      console.log('Approval successful!');
+    } catch (error) {
+      console.error('Approval failed!', error);
+    }
+  };
+
+  const handleStake = async () => {
+    if (!window.ethereum || !stakeAmount) {
+      console.error('No Ethereum provider found, or invalid stake amount.');
+      return;
+    }
+
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // Create staking contract instance
+      const stakingContract = new ethers.Contract(
+        STAKING_CONTRACT.address,
+        STAKING_CONTRACT_ABI,
+        signer
+      );
+
+      console.log('Staking tokens...');
+      const tx = await stakingContract.stake(
+        ethers.parseEther(stakeAmount.toString())
+      );
+      console.log('Staking in progress...', tx);
+
+      await tx.wait();
+      console.log('Stake successful!');
+      setStakeAmount(0);
+    } catch (error) {
+      console.error('Staking failed!', error);
+    }
+  };
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        background: "#f9f9f9",
-        borderRadius: "10px",
-        maxWidth: "400px",
-        margin: "0 auto",
-        color: "black", // Set font color to black
-      }}
-    >
-      <h3>Staking Information</h3>
-      {walletAddress ? (
-        <p style={{ color: "black" }}>Connected Wallet: {walletAddress}</p>
-      ) : (
-        <p style={{ color: "black" }}>Loading wallet address...</p>
-      )}
-      {stakingInfo ? (
-        <div>
-          <p style={{ color: "black" }}>Tokens Staked: {formatEther(stakingInfo._tokensStaked)}</p>
-          <p style={{ color: "black" }}>Rewards: {formatEther(stakingInfo._rewards)}</p>
-        </div>
-      ) : (
-        <p style={{ color: "black" }}>Loading staking information...</p>
-      )}
+    <div style={{ textAlign: 'center', padding: '20px', color: 'white' }}>
+      <h2>Stake Your LP Tokens</h2>
+      <input
+        type="number"
+        value={stakeAmount}
+        onChange={(e) => setStakeAmount(parseFloat(e.target.value))}
+        placeholder="Enter amount to stake"
+        style={{
+          padding: '10px',
+          borderRadius: '5px',
+          border: '1px solid #ccc',
+          width: '80%',
+          marginBottom: '10px',
+        }}
+      />
+      <div>
+        <button
+          onClick={handleApprove}
+          style={{
+            padding: '10px 20px',
+            marginRight: '10px',
+            backgroundColor: '#ffd700',
+            color: '#333',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+          }}
+        >
+          Approve
+        </button>
+        <button
+          onClick={handleStake}
+          disabled={isStaking}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#4caf50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: isStaking ? 'not-allowed' : 'pointer',
+          }}
+        >
+          Stake
+        </button>
+      </div>
     </div>
   );
 };
+
+export default StakeToken;
